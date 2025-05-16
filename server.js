@@ -14,7 +14,8 @@ const users = {};
 const dmUsers = {}; // Pour les discussions privées
 
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./users.db');
+const db = new sqlite3.Database(process.env.DB_PATH || './users.db');
+
 
 // Créer la table si elle n'existe pas
 db.serialize(() => {
@@ -291,7 +292,9 @@ app.use(express.json());
 // ➤ Inscription
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
-  const hash = await bcrypt.hash(password, 10);
+  const saltRounds = parseInt(process.env.SALT_ROUNDS) || 10;
+  const hash = await bcrypt.hash(password, saltRounds);
+
 
   db.run(
     'INSERT INTO users (username, password) VALUES (?, ?)',
@@ -327,6 +330,8 @@ app.post('/login', (req, res) => {
 
 
 // ➤ Démarrer le serveur
-server.listen(3000, '0.0.0.0', () => {
-  console.log('🚀 Serveur lancé sur http://0.0.0.0:3000');
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`🚀 Serveur lancé sur http://localhost:${PORT}`);
+
 });
