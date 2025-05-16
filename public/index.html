@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="shortcut icon" href="./img/logo.ico" type="image/x-icon">
+  <title>Messagerie</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #1C1C1E, #2C2C2E, #3A3A3C);
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+    }
+
+    .chat-container {
+      width: 100%;
+      max-width: 500px;
+      height: 90vh;
+      background-color: #2C2C2E;
+      padding: 20px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .chat-header h3 {
+        margin: 0;
+        font-size: 20px;
+        background: linear-gradient(90deg,  rgba(59, 146, 226, 0.623), #4a6cf7);
+        background-size: 200% auto;
+        color: transparent;
+        background-clip: text;
+        -webkit-background-clip: text;
+        animation: shineText 3s ease-in-out infinite;
+        text-shadow: 0 0 5px rgba(74, 108, 247, 0.5), 0 0 10px rgba(142, 68, 173, 0.5);
+    }
+    
+    @keyframes shineText {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .logout-button {
+      background: linear-gradient(45deg, #4a6cf7, rgba(59, 146, 226, 0.623));
+      background-size: 200% 200%;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .logout-button:hover {
+      animation: blueVioletShift 3s ease infinite;
+      transform: scale(1.05);
+    }
+
+    @keyframes blueVioletShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 12px;
+      padding: 10px;
+      background-color: #1C1C1E;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sent, .received {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      word-wrap: break-word;
+      font-size: 14px;
+      line-height: 1.4;
+      display: inline-block;
+    }
+
+    .sent {
+      align-self: flex-end;
+      background-color: white;
+      color: #4a6cf7;
+      border-radius: 18px 18px 6px 18px;
+      border: 1px solid #d0d7ff;
+    }
+
+    .received {
+      align-self: flex-start;
+      background-color: #4a6cf7;
+      color: white;
+      border-radius: 18px 18px 18px 6px;
+    }
+
+    .input-container {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="text"], input[type="file"] {
+      flex: 1;
+      padding: 10px;
+      background-color: #1C1C1E;
+      border: 1px solid #444;
+      border-radius: 5px;
+      color: white;
+      font-size: 14px;
+    }
+
+    button#send-button {
+      padding: 10px 15px;
+      background-color: rgba(59, 146, 226, 0.623);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button#send-button:hover {
+      background-color: #4a6cf7;
+    }
+
+    .booton {
+        padding: 8px 13px;
+      background-color: rgba(59, 146, 226, 0.623);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 200;
+
+    }
+
+    .booton:hover{
+        background-color: #4a6cf7; 
+    }
+
+    button:focus {
+      outline: none;
+    }
+
+    @media screen and (max-width: 600px) {
+      .chat-container {
+        max-width: 100%;
+        height: 100vh;
+        border-radius: 0;
+        padding: 15px;
+      }
+
+      .chat-header h3 {
+        font-size: 18px;
+      }
+    }
+
+    .chat-container.dragover {
+  border: 2px dashed #4a6cf7;
+}
+
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <h3>DISCUTIONS</h3>
+      <button class="logout-button" onclick="logout()">Déconnexion</button>
+    </div>
+    <div id="user-list" style="margin-bottom: 10px; font-size: 14px; color: #ccc;"></div>
+    <div class="messages" id="messages"></div>
+    <div id="typing-indicator" style="font-size: 12px; margin: 5px 0 10px 10px; color: #bbb;"></div>
+    <div class="input-container">
+      <input type="text" id="writing" placeholder="Tapez un message..." />
+      <input type="file" id="fileInput" style="display: none;" />
+      <button class="booton" onclick="document.getElementById('fileInput').click()">+</button>
+      <progress id="progressBar" value="0" max="100" style="width: 100%; display: none; margin-top: 10px;"></progress>
+      <button id="send-button">Envoyer</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const messagesContainer = document.getElementById('messages');
+    const inputField = document.getElementById('writing');
+    const sendButton = document.getElementById('send-button');
+    const fileInput = document.getElementById('fileInput');
+    const notificationSound = new Audio('/sounds/notify.mp3');
+
+
+    socket.on('chat_history', (messages) => {
+  messages.forEach(msg => {
+    const isFile = msg.message.startsWith('/uploads/');
+    if (isFile) {
+      displayMessage(msg.message, 'file', msg.sender);
+    } else {
+      displayMessage(`${msg.sender}: ${msg.message}`, 'text', msg.sender);
+    }
+  });
+});
+
+
+    const username = localStorage.getItem('username');
+    if (!username) {
+      window.location.href = '/';
+    }
+
+    socket.emit('set_username', username);
+
+    function displayMessage(content, type = 'text', sender = 'Moi') {
+  const msg = document.createElement('div');
+  msg.classList.add(sender === 'Moi' ? 'sent' : 'received');
+
+  if (type === 'file') {
+  const ext = content.split('.').pop().toLowerCase();
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+  const isAudio = ['mp3', 'ogg', 'wav'].includes(ext);
+  const isVideo = ['mp4', 'webm'].includes(ext);
+  const isPDF = ['pdf'].includes(ext);
+
+  if (isImage) {
+    const img = document.createElement('img');
+    img.src = content;
+    img.alt = 'Image';
+    img.style.maxWidth = '200px';
+    img.style.borderRadius = '8px';
+    img.style.cursor = 'pointer';
+    img.addEventListener('click', () => openLightbox('image', content));
+    msg.appendChild(img);
+  } else if (isAudio) {
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.src = content;
+    msg.appendChild(audio);
+  } else if (isVideo) {
+    const video = document.createElement('video');
+    video.src = content;
+    video.controls = true;
+    video.style.maxWidth = '200px';
+    video.style.borderRadius = '8px';
+    video.style.cursor = 'pointer';
+    video.addEventListener('click', () => openLightbox('video', content));
+    msg.appendChild(video);
+  } else if (isPDF) {
+    const btn = document.createElement('button');
+    btn.textContent = '📄PDF';
+    btn.style.cursor = 'pointer';
+    btn.style.padding = '8px 12px';
+    btn.style.border = 'none';
+    btn.style.borderRadius = '6px';
+    btn.style.backgroundColor = sender === 'Moi' ? '#4a6cf7' : '#888';
+    btn.style.color = 'white';
+    btn.addEventListener('click', () => openLightbox('pdf', content));
+    msg.appendChild(btn);
+  } else {
+    const link = document.createElement('a');
+    link.href = content;
+    link.textContent = 'Télécharger le fichier';
+    link.target = '_blank';
+    link.style.textDecoration = 'underline';
+    link.style.color = sender === 'Moi' ? '#4a6cf7' : '#fff';
+    msg.appendChild(link);
+  }
+}
+
+
+ else {
+    msg.textContent = content;
+  }
+
+  messagesContainer.appendChild(msg);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+
+function sendMessage() {
+  const messageText = inputField.value.trim();
+  const file = fileInput.files[0];
+
+  if (messageText !== '' || file) {
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('username', username);
+
+      const xhr = new XMLHttpRequest();
+      const progressBar = document.getElementById('progressBar');
+
+      xhr.open('POST', '/send-file', true);
+
+      xhr.upload.onprogress = function (e) {
+        if (e.lengthComputable) {
+          progressBar.style.display = 'block';
+          const percent = Math.round((e.loaded / e.total) * 100);
+          progressBar.value = percent;
+        }
+      };
+
+      xhr.onload = function () {
+        progressBar.style.display = 'none';
+        progressBar.value = 0;
+        if (xhr.status === 200) {
+          const data = JSON.parse(xhr.responseText);
+          const fileUrl = data.fileUrl;
+          displayMessage(fileUrl, 'file', 'Moi');
+          socket.emit('send_message', { message: fileUrl });
+        } else {
+          alert("Erreur lors de l'envoi du fichier.");
+        }
+      };
+
+      xhr.onerror = function () {
+        progressBar.style.display = 'none';
+        alert("Erreur réseau pendant l'envoi.");
+      };
+
+      xhr.send(formData);
+      } else {
+        displayMessage(messageText, 'text', 'Moi');
+        socket.emit('send_message', { message: messageText });
+    }
+
+    inputField.value = '';
+    fileInput.value = '';
+  }
+}
+
+
+    sendButton.addEventListener('click', sendMessage);
+    inputField.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    });
+
+    socket.on('receive_message', (data) => {
+  const isFile = data.message.startsWith('/uploads/');
+  if (data.sender !== username) {
+    if (isFile) {
+      displayMessage(data.message, 'file', data.sender);
+    } else {
+      displayMessage(`${data.sender}: ${data.message}`, 'text', data.sender);
+    }
+
+    notificationSound.play().catch(e => console.log("🔇 Son bloqué par le navigateur"));
+  }
+});
+
+const typingIndicator = document.getElementById('typing-indicator');
+let typingTimeout;
+
+// Émettre quand l'utilisateur écrit
+inputField.addEventListener('input', () => {
+  socket.emit('typing', true);
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    socket.emit('typing', false);
+  }, 1000);
+});
+
+// Afficher les utilisateurs en train d’écrire
+socket.on('user_typing', ({ username, isTyping }) => {
+  if (isTyping) {
+    typingIndicator.textContent = `${username} est en train d’écrire...`;
+  } else {
+    typingIndicator.textContent = '';
+  }
+});
+
+function openLightbox(type, src) {
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.top = 0;
+  overlay.style.left = 0;
+  overlay.style.width = '100vw';
+  overlay.style.height = '100vh';
+  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+  overlay.style.display = 'flex';
+  overlay.style.justifyContent = 'center';
+  overlay.style.alignItems = 'center';
+  overlay.style.zIndex = 9999;
+  overlay.style.cursor = 'zoom-out';
+
+  let contentEl;
+
+  if (type === 'image') {
+    contentEl = document.createElement('img');
+    contentEl.src = src;
+    contentEl.style.maxWidth = '90%';
+    contentEl.style.maxHeight = '90%';
+    contentEl.style.borderRadius = '10px';
+  } else if (type === 'video') {
+    contentEl = document.createElement('video');
+    contentEl.src = src;
+    contentEl.controls = true;
+    contentEl.autoplay = true;
+    contentEl.style.maxWidth = '90%';
+    contentEl.style.maxHeight = '90%';
+    contentEl.style.borderRadius = '10px';
+} else if (type === 'pdf') {
+  window.open(src, '_blank');
+  return;
+  }
+  overlay.appendChild(contentEl);
+
+  // Fermer la lightbox en cliquant n'importe où
+  overlay.addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+
+  document.body.appendChild(overlay);
+}
+
+
+// === GESTION DU GLISSER-DÉPOSER ===
+const chatContainer = document.querySelector('.chat-container');
+
+chatContainer.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  chatContainer.style.border = '2px dashed #4a6cf7';
+});
+
+chatContainer.addEventListener('dragleave', () => {
+  chatContainer.style.border = 'none';
+});
+
+chatContainer.addEventListener('drop', (e) => {
+  e.preventDefault();
+  chatContainer.style.border = 'none';
+
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    fileInput.files = files;
+
+    // simule un clic sur "Envoyer"
+    sendMessage();
+  }
+});
+socket.on('user_list', (usernames) => {
+  const userListContainer = document.getElementById('user-list');
+  userListContainer.innerHTML = `<strong>Utilisateurs connectés :</strong> ${usernames.join(', ')}`;
+});
+
+
+    function logout() {
+      localStorage.removeItem('username');
+      window.location.href = '/';
+    }
+  </script>
+  
+</body>
+</html>

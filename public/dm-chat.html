@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DM Chat</title>
+  <link rel="shortcut icon" href="./img/logo.ico" type="image/x-icon" />
+  <style>
+    /* ... (garde ton CSS existant ici) ... */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #1C1C1E, #2C2C2E, #3A3A3C);
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      color: white;
+    }
+    .sidebar {
+      width: 250px;
+      background-color: #2C2C2E;
+      padding: 15px;
+      border-right: 1px solid #444;
+      overflow-y: auto;
+    }
+    .sidebar h3 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+    .user-btn {
+      background-color: #3A3A3C;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .user-btn:hover {
+      background-color: #4a6cf7;
+    }
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .chat-header h3 {
+      margin: 0;
+      font-size: 20px;
+      background: linear-gradient(90deg, rgba(59, 146, 226, 0.623), #4a6cf7);
+      background-size: 200% auto;
+      color: transparent;
+      background-clip: text;
+      -webkit-background-clip: text;
+      animation: shineText 3s ease-in-out infinite;
+      text-shadow: 0 0 5px rgba(74, 108, 247, 0.5), 0 0 10px rgba(142, 68, 173, 0.5);
+    }
+    @keyframes shineText {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      background-color: #1C1C1E;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sent, .received {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      word-wrap: break-word;
+      font-size: 14px;
+      line-height: 1.4;
+      display: inline-block;
+    }
+    .sent {
+      align-self: flex-end;
+      background-color: white;
+      color: #4a6cf7;
+      border: 1px solid #d0d7ff;
+      border-radius: 18px 18px 6px 18px;
+    }
+    .received {
+      align-self: flex-start;
+      background-color: #4a6cf7;
+      color: white;
+      border-radius: 18px 18px 18px 6px;
+    }
+    .input-container {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      background-color: #1C1C1E;
+      border: 1px solid #444;
+      border-radius: 5px;
+      color: white;
+      font-size: 14px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: rgba(59, 146, 226, 0.623);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #4a6cf7;
+    }
+    progress {
+      width: 100%;
+      display: none;
+    }
+    .you-status {
+      color: #4a6cf7;
+      margin-bottom: 12px;
+      font-weight: bold;
+    }
+    audio.custom-audio {
+  width: 100%;
+  height: 32px;
+  border: none;
+  background: transparent;
+  outline: none;
+  filter: invert(1); /* rend les contrôles blancs sur fond sombre */
+}
+
+.audio-bubble {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background-color: #2c2c2e;
+  max-width: 260px;
+}
+
+.sent .audio-bubble {
+  background-color: white;
+  color: #4a6cf7;
+}
+
+.received .audio-bubble {
+  background-color: #4a6cf7;
+  color: white;
+}
+
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h3>Connectés</h3>
+    <div id="connectedList"></div>
+    <button onclick="logout()" style="margin-top: 20px; width: 100%;">Déconnexion</button>
+  </div>
+  <div class="chat-container">
+    <div class="chat-header">
+      <h3>DM avec <span id="targetName">...</span></h3>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="input-container">
+      <input type="text" id="messageInput" placeholder="Tapez un message..." />
+      <input type="file" id="fileInput" style="display: none;" />
+      <button onclick="document.getElementById('fileInput').click()">+</button>
+      <progress id="progressBar" value="0" max="100"></progress>
+      <button onclick="sendMessage()">Envoyer</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+  const username = localStorage.getItem('dmUser');
+  let target = localStorage.getItem('targetUser');
+  const unreadCounts = {}; // { "userA": 2, "userB": 1, ... }
+  const messagesEl = document.getElementById('messages');
+  const input = document.getElementById('messageInput');
+  const fileInput = document.getElementById('fileInput');
+  const progressBar = document.getElementById('progressBar');
+  const targetNameEl = document.getElementById('targetName');
+  const connectedList = document.getElementById('connectedList');
+
+  // 🔔 Demander permission de notification si nécessaire
+  if (Notification.permission !== "granted") {
+    Notification.requestPermission();
+  }
+
+  // 🔊 Préparer le son de notification
+  const notifySound = new Audio('/sounds/notify.mp');
+
+  if (!username) {
+    alert("Session expirée. Veuillez vous reconnecter.");
+    localStorage.clear();
+    window.location.href = '/dm-login';
+  }
+
+  socket.emit('dm_register', username);
+
+  if (target) {
+    targetNameEl.textContent = target;
+    socket.emit('request_dm_history', target);
+  } else {
+    targetNameEl.textContent = '...';
+  }
+
+  // Stockage des messages envoyés vus (messageId simulé ici avec timestamp + hash simple)
+  const sentMessages = new Map();
+
+  // Gestion utilisateurs connectés (avec statut en ligne)
+  socket.on('connected_users', (users) => {
+  updateUserList(users);
+});
+function updateUserList(users) {
+  connectedList.innerHTML = '';
+
+  const youDiv = document.createElement('div');
+  youDiv.className = 'you-status';
+  youDiv.textContent = `Vous (${username})`;
+  connectedList.appendChild(youDiv);
+
+  users.forEach(user => {
+    if (user !== username) {
+      const btn = document.createElement('button');
+      btn.className = 'user-btn';
+      btn.setAttribute('data-user', user);
+
+      const unread = unreadCounts[user] || 0;
+      const badge = unread > 0
+        ? `<span style="background:red;color:white;border-radius:50%;padding:2px 6px;margin-left:6px;font-size:12px;">${unread}</span>`
+        : '';
+
+      btn.innerHTML = `<span style="color: limegreen;">●</span> ${user} ${badge}`;
+
+      btn.onclick = () => {
+        localStorage.setItem('targetUser', user);
+        target = user;
+        targetNameEl.textContent = user;
+        messagesEl.innerHTML = '';
+        unreadCounts[user] = 0; // Réinitialiser
+        socket.emit('request_dm_history', user);
+        updateUserList(users);
+      };
+
+      connectedList.appendChild(btn);
+    }
+  });
+}
+
+
+  // Affichage de l'historique avec double check
+  socket.on('dm_history', (messages) => {
+    messagesEl.innerHTML = '';
+    messages.forEach(msg => displayMessage(msg.message, msg.from, msg.timestamp, msg.seen));
+  });
+
+  // Reception d'un message privé
+socket.on('private_message', ({ from, message, timestamp }) => {
+  if (from === target) {
+    displayMessage(message, from, timestamp);
+  } else {
+    // ➕ Incrémenter compteur
+    unreadCounts[from] = (unreadCounts[from] || 0) + 1;
+    socket.emit('connected_users_request'); // ➤ nouvelle demande (voir plus bas)
+  }
+
+  if (document.hidden && Notification.permission === "granted") {
+    new Notification(`Message de ${from}`, {
+      body: typeof message === 'string' ? message.slice(0, 80) + '...' : '[Fichier reçu]',
+      icon: '/img/logo.ico',
+      tag: from
+    });
+  } else {
+    notifySound.play().catch(() => {});
+  }
+});
+
+  // Reception notification message vu
+  socket.on('message_seen', (messageId) => {
+    // Trouver l'élément correspondant et ajouter la double coche
+    const el = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (el) {
+      const check = el.querySelector('.check-status');
+      if (check) check.textContent = '✓✓';
+    }
+  });
+
+  // Génération d'un id simple pour message (ex : hash du message + timestamp)
+  function generateMessageId(message, timestamp) {
+    return btoa(message + timestamp).substring(0, 12);
+  }
+
+  // Affichage du message avec heure et double check si envoyé
+  function displayMessage(content, sender, timestamp = Date.now(), seen = false) {
+    const div = document.createElement('div');
+    div.className = sender === username ? 'sent' : 'received';
+
+    const messageId = generateMessageId(content, timestamp);
+    div.setAttribute('data-message-id', messageId);
+
+    const ext = content.split('.').pop().toLowerCase();
+
+if (content.startsWith('/uploads/')) {
+  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+    const img = document.createElement('img');
+    img.src = content;
+    img.style.maxWidth = '200px';
+    img.style.borderRadius = '8px';
+    div.appendChild(img);
+  } else if (["mp4", "webm"].includes(ext)) {
+    const video = document.createElement('video');
+    video.src = content;
+    video.controls = true;
+    video.style.maxWidth = '200px';
+    div.appendChild(video);
+  } else if (["mp3", "wav", "ogg", "webm"].includes(ext)) {
+    // Audio stylé dans une bulle
+    const wrapper = document.createElement('div');
+    wrapper.className = 'audio-bubble';
+
+    const audio = document.createElement('audio');
+    audio.src = content;
+    audio.controls = true;
+    audio.className = 'custom-audio';
+
+    wrapper.appendChild(audio);
+    div.appendChild(wrapper);
+  } else if (ext === 'pdf') {
+    const link = document.createElement('a');
+    link.href = content;
+    link.target = '_blank';
+    link.textContent = '📄 Ouvrir le PDF';
+    div.appendChild(link);
+  } else {
+    const link = document.createElement('a');
+    link.href = content;
+    link.textContent = '📁 Fichier';
+    link.target = '_blank';
+    div.appendChild(link);
+  }
+} else {
+  div.textContent = content;
+}
+
+
+    // Heure
+    const timeSpan = document.createElement('span');
+    timeSpan.style.fontSize = '10px';
+    timeSpan.style.display = 'inline-block';
+    timeSpan.style.marginLeft = '8px';
+    timeSpan.style.opacity = '0.6';
+
+    const date = new Date(timestamp);
+    timeSpan.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Pour messages envoyés, ajouter check status
+    if (sender === username) {
+      const checkSpan = document.createElement('span');
+      checkSpan.className = 'check-status';
+      checkSpan.style.marginLeft = '8px';
+      checkSpan.textContent = seen ? '✓✓' : '✓'; // simple check ou double check
+      timeSpan.appendChild(checkSpan);
+    }
+
+    div.appendChild(timeSpan);
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    // Si message envoyé par l’autre, on informe que message a été vu
+    if (sender !== username && sender === target) {
+      socket.emit('message_seen', messageId);
+    }
+  }
+
+  // Enregistrement vocal
+  let mediaRecorder;
+  let audioChunks = [];
+  let recording = false;
+
+  // Crée bouton micro
+  const micButton = document.createElement('button');
+  micButton.textContent = '🎤';
+  micButton.style.padding = '10px 15px';
+  micButton.style.marginLeft = '4px';
+  micButton.style.borderRadius = '5px';
+  micButton.style.cursor = 'pointer';
+  micButton.title = 'Appuyez pour enregistrer un message vocal';
+
+  document.querySelector('.input-container').appendChild(micButton);
+
+  micButton.onclick = () => {
+    if (recording) {
+      mediaRecorder.stop();
+      micButton.textContent = '🎤';
+      recording = false;
+    } else {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Enregistrement vocal non supporté sur ce navigateur.');
+        return;
+      }
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.start();
+          micButton.textContent = '⏹️';
+          recording = true;
+
+          audioChunks = [];
+          mediaRecorder.addEventListener('dataavailable', event => {
+            audioChunks.push(event.data);
+          });
+
+          mediaRecorder.addEventListener('stop', () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const file = new File([audioBlob], 'audio-message.webm', { type: 'audio/webm' });
+
+            // Envoi du fichier audio
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('username', username);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/send-file', true);
+
+            xhr.onload = function () {
+              if (xhr.status === 200) {
+                try {
+                  const { fileUrl } = JSON.parse(xhr.responseText);
+                  displayMessage(fileUrl, username, Date.now());
+                  socket.emit('private_message', {
+                    to: target,
+                    message: fileUrl,
+                    timestamp: Date.now()
+                  });
+                } catch (e) {
+                  alert("Erreur lors du traitement du fichier audio envoyé.");
+                }
+              } else {
+                alert("Erreur réseau pendant l'envoi du fichier audio.");
+              }
+            };
+
+            xhr.send(formData);
+          });
+        })
+        .catch(() => alert('Permission microphone refusée.'));
+    }
+  };
+
+  function sendMessage() {
+    if (!target) {
+      alert("Veuillez sélectionner un utilisateur avant d'envoyer un message.");
+      return;
+    }
+
+    const text = input.value.trim();
+    const file = fileInput.files[0];
+
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('username', username);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/send-file', true);
+
+      xhr.upload.onprogress = function (e) {
+        if (e.lengthComputable) {
+          progressBar.style.display = 'block';
+          progressBar.value = Math.round((e.loaded / e.total) * 100);
+        }
+      };
+
+      xhr.onload = function () {
+        progressBar.style.display = 'none';
+        progressBar.value = 0;
+
+        try {
+          const { fileUrl } = JSON.parse(xhr.responseText);
+          displayMessage(fileUrl, username, Date.now());
+          socket.emit('private_message', {
+            to: target,
+            message: fileUrl,
+            timestamp: Date.now()
+          });
+        } catch (e) {
+          alert("Erreur lors du traitement du fichier envoyé.");
+        }
+      };
+
+      xhr.onerror = function () {
+        progressBar.style.display = 'none';
+        alert("Erreur réseau pendant l'envoi du fichier.");
+      };
+
+      xhr.send(formData);
+    } else if (text !== '') {
+      displayMessage(text, username, Date.now());
+      socket.emit('private_message', {
+        to: target,
+        message: text,
+        timestamp: Date.now()
+      });
+    }
+
+    input.value = '';
+    fileInput.value = '';
+  }
+
+  function logout() {
+    localStorage.removeItem('dmUser');
+    localStorage.removeItem('targetUser');
+    window.location.href = '/dm-login';
+  }
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendMessage();
+  });
+</script>
+</body>
+</html>
