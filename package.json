@@ -1,14 +1,17 @@
 {
   "name": "messagerie-app",
   "version": "1.0.0",
+  "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "dotenv": "^16.5.0",
@@ -17,6 +20,5 @@
     "multer": "^1.4.5-lts.2",
     "socket.io": "^4.8.1",
     "sqlite3": "^5.1.7"
-  },
-  "description": ""
+  }
 }
