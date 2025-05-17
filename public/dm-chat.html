@@ -172,58 +172,83 @@
 @media (max-width: 768px) {
   body {
     flex-direction: column;
+    height: auto;
   }
 
   .sidebar {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #444;
+    padding: 10px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
+    overflow-x: auto;
+    max-height: 200px;
   }
 
   .chat-container {
-    padding: 10px;
+    padding: 12px;
+    flex: unset;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
-  .chat-header h3 {
-    font-size: 16px;
-    text-align: center;
-    width: 100%;
+  .chat-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
 
   .messages {
-    font-size: 14px;
-    padding: 8px;
-  }
-
-  input[type="text"] {
-    font-size: 14px;
-    padding: 8px;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding: 10px;
   }
 
   .input-container {
     flex-wrap: wrap;
     gap: 6px;
+    margin-top: 10px;
   }
 
-  .input-container button {
-    flex: 1;
-    padding: 10px;
+  input[type="text"] {
+    width: 100%;
     font-size: 14px;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 10px;
+    flex: 1;
   }
 
   .user-btn {
     font-size: 14px;
     padding: 8px;
+    width: 100%;
+  }
+
+  .audio-bubble {
+    max-width: 100%;
+  }
+
+  .sent, .received {
+    max-width: 90%;
+    font-size: 13px;
   }
 
   .you-status {
     font-size: 14px;
-    margin: 10px 0;
+  }
+
+  img, video {
+    max-width: 100%;
+    height: auto;
   }
 }
+
 
   </style>
 </head>
