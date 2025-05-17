@@ -237,7 +237,7 @@
           <h1>Salut, Ami !</h1>
           <p>Inscris-toi pour accéder à toutes les fonctionnalités</p>
           <button class="ghost" id="signUp">S’inscrire</button>
-          <button class="ghost" onclick="hideResetForm()">Retour</button>
+          <button class="ghost" onclick="redirectToConnexion()">Retour</button>
         </div>
       </div>
     </div>
@@ -310,7 +310,9 @@
         messageBox.textContent = "Erreur serveur.";
       }
     }
-
+function redirectToConnexion() {
+    window.location.href = "https://app-chat-5gft.onrender.com/";
+}
     async function resetPassword() {
       const username = document.getElementById('resetUsername').value.trim();
       const question = document.getElementById('resetQuestion').value;
