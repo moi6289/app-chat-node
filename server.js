@@ -19,15 +19,20 @@ const db = new sqlite3.Database(process.env.DB_PATH || './users.db');
 
 // Créer la table si elle n'existe pas
 db.serialize(() => {
+  db.run(`DROP TABLE IF EXISTS users;`); // Supprime l'ancienne table
+
   db.run(`
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
+      question TEXT,
+      answer TEXT,
       online INTEGER DEFAULT 0
     );
   `);
 });
+
 
 
 // ➤ Créer le dossier uploads s’il n'existe pas
@@ -98,6 +103,39 @@ function savePrivateMessage(messageObj) {
     console.error("❌ Erreur de sauvegarde DM :", err);
   }
 }
+
+app.post('/reset-password', async (req, res) => {
+  const { username, question, answer, newPassword } = req.body;
+
+  db.get(
+    'SELECT * FROM users WHERE username = ?',
+    [username],
+    async (err, user) => {
+      if (err || !user) {
+        return res.status(404).json({ message: 'Utilisateur non trouvé' });
+      }
+
+      if (user.question !== question || user.answer !== answer) {
+        return res.status(401).json({ message: 'Question ou réponse incorrecte.' });
+      }
+
+      const saltRounds = parseInt(process.env.SALT_ROUNDS) || 10;
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      db.run(
+        'UPDATE users SET password = ? WHERE username = ?',
+        [hashedPassword, username],
+        (err) => {
+          if (err) {
+            return res.status(500).json({ message: 'Erreur lors de la mise à jour.' });
+          }
+          res.json({ message: 'Mot de passe réinitialisé avec succès ✅' });
+        }
+      );
+    }
+  );
+});
+
 
 
 // ➤ Route vers la page de connexion
@@ -291,14 +329,14 @@ app.use(express.json());
 
 // ➤ Inscription
 app.post('/register', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, question, answer } = req.body;
   const saltRounds = parseInt(process.env.SALT_ROUNDS) || 10;
   const hash = await bcrypt.hash(password, saltRounds);
 
 
-  db.run(
-    'INSERT INTO users (username, password) VALUES (?, ?)',
-    [username, hash],
+ db.run(
+  'INSERT INTO users (username, password, question, answer) VALUES (?, ?, ?, ?)',
+  [username, hash, question, answer],
     function (err) {
       if (err) {
         return res.status(400).json({ message: 'Nom déjà utilisé' });

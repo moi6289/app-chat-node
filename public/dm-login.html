@@ -1,186 +1,338 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Connexion DM</title>
-  <link rel="shortcut icon" href="./img/logo.ico" type="image/x-icon">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="shortcut icon" href="./img/logo.ico" type="image/x-icon">
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
-      margin: 0;
       font-family: 'Arial', sans-serif;
       background: linear-gradient(to right, #2a2a2c, #3a3a3c);
       display: flex;
-      align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
       color: #f1f1f1;
     }
-
     .container {
       background-color: #3a3a3c;
-      width: 100%;
-      max-width: 400px;
-      padding: 40px;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+      position: relative;
+      overflow: hidden;
+      width: 768px;
+      max-width: 100%;
+      min-height: 480px;
+    }
+    .form-container {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      transition: all 0.6s ease-in-out;
+    }
+    .sign-in-container,
+    .reset-container {
+      left: 0;
+      width: 50%;
+      z-index: 2;
+    }
+    .sign-up-container {
+      left: 0;
+      width: 50%;
+      opacity: 0;
+      z-index: 1;
+    }
+    .container.right-panel-active .sign-in-container {
+      transform: translateX(100%);
+    }
+    .container.right-panel-active .sign-up-container {
+      transform: translateX(100%);
+      opacity: 1;
+      z-index: 5;
+      animation: show 0.6s;
+    }
+    .container.show-reset .sign-in-container {
+      display: none;
+    }
+    .container.show-reset .reset-container {
+      display: block;
+    }
+    .reset-container {
+      display: none;
+    }
+    @keyframes show {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    form {
+      background-color: #3a3a3c;
       display: flex;
       flex-direction: column;
       align-items: center;
-    }
-
-    h2 {
-      margin-bottom: 24px;
-      font-size: 26px;
-      color: #4a6cf7;
+      justify-content: center;
+      padding: 0 50px;
+      height: 100%;
       text-align: center;
-      font-weight: bold;
     }
-
-    input, button {
-      width: 100%;
-      padding: 16px;
-      margin-bottom: 20px;
-      border: 1px solid #666;
-      border-radius: 8px;
+    input, select {
       background-color: #2a2a2c;
+      border: none;
+      padding: 12px 15px;
+      margin: 8px 0;
+      width: 100%;
+      border-radius: 8px;
       color: #f1f1f1;
-      font-size: 16px;
-      transition: border-color 0.3s, background-color 0.3s;
     }
-
     input::placeholder {
       color: #aaa;
     }
-
-    input:focus {
-      border-color: #4a6cf7;
-      outline: none;
-    }
-
     button {
-      background-color: #4a6cf7;
-      color: white;
+      border-radius: 20px;
       border: none;
-      border-radius: 30px;
-      font-size: 16px;
+      background-color: #4a6cf7;
+      color: #fff;
+      font-size: 14px;
+      padding: 12px 45px;
+      margin-top: 10px;
       cursor: pointer;
-      transition: background-color 0.3s, transform 0.1s;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      transition: background-color 0.3s;
     }
-
     button:hover {
       background-color: #3a56c3;
     }
-
-    button:active {
-      transform: translateY(1px);
+    .overlay-container {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 50%;
+      height: 100%;
+      overflow: hidden;
+      transition: transform 0.6s ease-in-out;
+      z-index: 100;
     }
-
-    @media (max-height: 500px) {
-      .container {
-        padding: 20px;
-      }
-
-      h2 {
-        font-size: 20px;
-        margin-bottom: 16px;
-      }
-
-      input[type="text"], button {
-        font-size: 14px;
-        padding: 12px;
-      }
+    .container.right-panel-active .overlay-container {
+      transform: translateX(-100%);
     }
-
-    a {
-      color: #4a6cf7;
+    .overlay {
+      background: linear-gradient(to right, #4a6cf7, #3a56c3);
+      color: #fff;
+      position: relative;
+      left: -100%;
+      height: 100%;
+      width: 200%;
+      transform: translateX(0);
+      transition: transform 0.6s ease-in-out;
+    }
+    .container.right-panel-active .overlay {
+      transform: translateX(50%);
+    }
+    .overlay-panel {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0 40px;
+      text-align: center;
+      top: 0;
+      height: 100%;
+      width: 50%;
+    }
+    .overlay-left {
+      transform: translateX(-20%);
+      left: 0;
+    }
+    .overlay-right {
+      right: 0;
+      transform: translateX(0);
+    }
+    .container.right-panel-active .overlay-left {
+      transform: translateX(0);
+    }
+    .container.right-panel-active .overlay-right {
+      transform: translateX(20%);
+    }
+    h1 {
+      font-weight: bold;
+      margin: 0;
+    }
+    p {
       font-size: 14px;
-      display: block;
-      margin-top: 15px;
-      text-align: center;
-      text-decoration: none;
-      transition: color 0.3s;
+      margin: 20px 0 30px;
     }
-
-    a:hover {
-      color: #3a56c3;
-    }
-
     .message {
+      color: #ff4757;
       margin-top: 10px;
-      color: #ff4757; /* Rouge pour les messages d'erreur */
-      text-align: center;
+      font-size: 14px;
+    }
+    .link {
+      color: #4a6cf7;
+      font-size: 13px;
+      margin-top: 10px;
+      cursor: pointer;
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Connexion ou inscription</h2>
-    <input type="text" id="username" placeholder="Nom d'utilisateur" />
-    <input type="password" id="password" placeholder="Mot de passe" />
-    <button onclick="login()">Se connecter</button>
-    <button onclick="register()">S’inscrire</button>
-    <a href="https://app-chat-5gft.onrender.com/">Retour</a>
-    <div id="message" class="message"></div>
+  <div class="container" id="container">
+    <div class="form-container sign-up-container">
+      <form id="registerForm">
+        <h1>Créer un compte</h1>
+        <input type="text" placeholder="Nom d'utilisateur" id="regUsername" />
+        <input type="password" placeholder="Mot de passe" id="regPassword" />
+        <select id="regQuestion">
+          <option value="">-- Choisissez une question secrète --</option>
+          <option value="animal">Quel est ton animal préféré ?</option>
+          <option value="ville">Dans quelle ville es-tu né(e) ?</option>
+          <option value="prof">Quel est le nom de ton premier professeur ?</option>
+        </select>
+        <input type="text" placeholder="Votre réponse" id="regAnswer" />
+        <button type="button" onclick="register()">S’inscrire</button>
+        <div id="registerMessage" class="message"></div>
+      </form>
+    </div>
+
+    <div class="form-container sign-in-container">
+      <form id="loginForm">
+        <h1>Se connecter</h1>
+        <input type="text" placeholder="Nom d'utilisateur" id="logUsername" />
+        <input type="password" placeholder="Mot de passe" id="logPassword" />
+        <button type="button" onclick="login()">Connexion</button>
+        <div class="link" onclick="showResetForm()">Mot de passe oublié ?</div>
+        <div id="loginMessage" class="message"></div>
+      </form>
+    </div>
+
+    <div class="form-container reset-container">
+      <form id="resetForm">
+        <h1>Mot de passe oublié</h1>
+        <input type="text" placeholder="Nom d'utilisateur" id="resetUsername" />
+        <select id="resetQuestion">
+          <option value="animal">Quel est ton animal préféré ?</option>
+          <option value="ville">Dans quelle ville es-tu né(e) ?</option>
+          <option value="prof">Quel est le nom de ton premier professeur ?</option>
+        </select>
+        <input type="text" placeholder="Réponse" id="resetAnswer" />
+        <input type="password" placeholder="Nouveau mot de passe" id="resetNewPassword" />
+        <button type="button" onclick="resetPassword()">Réinitialiser</button>
+        <div class="link" onclick="hideResetForm()">Retour</div>
+        <div id="resetMessage" class="message"></div>
+      </form>
+    </div>
+
+    <div class="overlay-container">
+      <div class="overlay">
+        <div class="overlay-panel overlay-left">
+          <h1>Bon retour !</h1>
+          <p>Connecte-toi avec tes identifiants</p>
+          <button class="ghost" id="signIn">Connexion</button>
+        </div>
+        <div class="overlay-panel overlay-right">
+          <h1>Salut, Ami !</h1>
+          <p>Inscris-toi pour accéder à toutes les fonctionnalités</p>
+          <button class="ghost" id="signUp">S’inscrire</button>
+          <button class="ghost" onclick="hideResetForm()">Retour</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-<script>
-  async function login() {
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
-    const messageBox = document.getElementById('message');
+  <script>
+    const container = document.getElementById('container');
 
-    if (!username || !password) {
-      messageBox.textContent = "Veuillez remplir tous les champs.";
-      return;
+    document.getElementById('signUp').addEventListener('click', () => {
+      container.classList.add("right-panel-active");
+    });
+
+    document.getElementById('signIn').addEventListener('click', () => {
+      container.classList.remove("right-panel-active");
+    });
+
+    function showResetForm() {
+      container.classList.add("show-reset");
     }
 
-    try {
-      const res = await fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
+    function hideResetForm() {
+      container.classList.remove("show-reset");
+    }
 
-      const data = await res.json();
-
-      if (res.ok && data.success !== false) {
-        localStorage.setItem('dmUser', username);
-        window.location.href = '/dm-chat';
-      } else {
-        messageBox.textContent = data.message || "Connexion échouée.";
+    async function login() {
+      const username = document.getElementById('logUsername').value.trim();
+      const password = document.getElementById('logPassword').value;
+      const messageBox = document.getElementById('loginMessage');
+      if (!username || !password) {
+        messageBox.textContent = "Veuillez remplir tous les champs.";
+        return;
       }
-    } catch (err) {
-      messageBox.textContent = "Erreur serveur. Veuillez réessayer.";
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok && data.success !== false) {
+          localStorage.setItem('dmUser', username);
+          window.location.href = '/dm-chat';
+        } else {
+          messageBox.textContent = data.message || "Connexion échouée.";
+        }
+      } catch (err) {
+        messageBox.textContent = "Erreur serveur.";
+      }
     }
-  }
 
-  async function register() {
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
-    const messageBox = document.getElementById('message');
-
-    if (!username || !password) {
-      messageBox.textContent = "Veuillez remplir tous les champs.";
-      return;
+    async function register() {
+      const username = document.getElementById('regUsername').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const question = document.getElementById('regQuestion').value;
+      const answer = document.getElementById('regAnswer').value.trim();
+      const messageBox = document.getElementById('registerMessage');
+      if (!username || !password || !question || !answer) {
+        messageBox.textContent = "Veuillez remplir tous les champs.";
+        return;
+      }
+      try {
+        const res = await fetch('/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, question, answer })
+        });
+        const data = await res.json();
+        messageBox.textContent = data.message || "Inscription réussie.";
+      } catch (err) {
+        messageBox.textContent = "Erreur serveur.";
+      }
     }
 
-    try {
-      const res = await fetch('/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-
-      const data = await res.json();
-      messageBox.textContent = data.message || "Inscription terminée.";
-    } catch (err) {
-      messageBox.textContent = "Erreur serveur. Veuillez réessayer.";
+    async function resetPassword() {
+      const username = document.getElementById('resetUsername').value.trim();
+      const question = document.getElementById('resetQuestion').value;
+      const answer = document.getElementById('resetAnswer').value.trim();
+      const newPassword = document.getElementById('resetNewPassword').value;
+      const messageBox = document.getElementById('resetMessage');
+      if (!username || !question || !answer || !newPassword) {
+        messageBox.textContent = "Veuillez remplir tous les champs.";
+        return;
+      }
+      try {
+        const res = await fetch('/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, question, answer, newPassword })
+        });
+        const data = await res.json();
+        messageBox.textContent = data.message || "Mot de passe mis à jour.";
+      } catch (err) {
+        messageBox.textContent = "Erreur serveur.";
+      }
     }
-  }
-</script>
-
+  </script>
 </body>
 </html>
