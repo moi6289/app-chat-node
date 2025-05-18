@@ -6,6 +6,10 @@ const multer = require('multer');
 const fs = require('fs');
 const messagesFile = path.join(__dirname, 'messages.json');
 const app = express();
+app.use(express.json()); // permet de lire les données JSON envoyées dans req.body
+
+app.use(express.urlencoded({ extended: true }));
+
 const server = http.createServer(app);
 const io = socketIo(server);
 const privateMessagesFile = path.join(__dirname, 'private-messages.json');
@@ -19,10 +23,8 @@ const db = new sqlite3.Database(process.env.DB_PATH || './users.db');
 
 // Créer la table si elle n'existe pas
 db.serialize(() => {
-  db.run(`DROP TABLE IF EXISTS users;`); // Supprime l'ancienne table
-
   db.run(`
-    CREATE TABLE users (
+    CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
@@ -32,6 +34,7 @@ db.serialize(() => {
     );
   `);
 });
+
 
 
 
